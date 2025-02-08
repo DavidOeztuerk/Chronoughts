@@ -1,0 +1,44 @@
+services:
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: chronoughts-frontend
+
+  api:
+    build:
+      context: ./src/backend/Chronoughts.Api
+      dockerfile: Dockerfile
+    ports:
+      - "5001:80"  # Expose API direkt auf 8080
+    container_name: chronoughts-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db;Database=ChronoughtsDb;User=sa;Password=YourStrong!Password;TrustServerCertificate=True
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: chronoughts-nginx
+    ports:
+      - '3000:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - api
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: chronoughts-db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Password
+    volumes:
+      - sqldata:/var/opt/mssql
+    ports:
+      - '1433:1433'
+
+volumes:
+  sqldata:
