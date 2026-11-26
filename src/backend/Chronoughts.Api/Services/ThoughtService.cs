@@ -19,7 +19,7 @@ public class ThoughtService<T>(
     private readonly IThoughtRepository<T> _repository = repository;
     private readonly IMapper _mapper = mapper;
 
-    public async Task<ThoughtResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<ThoughtResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await _repository.GetByIdAsync(id, cancellationToken);
         return _mapper.Map<ThoughtResponse>(entity);
@@ -46,7 +46,7 @@ public class ThoughtService<T>(
         return _mapper.Map<ThoughtResponse>(entity);
     }
 
-    public async Task<ThoughtResponse> UpdateAsync(int id, ThoughtRequest request, CancellationToken cancellationToken = default)
+    public async Task<ThoughtResponse> UpdateAsync(Guid id, ThoughtRequest request, CancellationToken cancellationToken = default)
     {
         var entity = await _repository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException($"Entity with id {id} not found");
@@ -57,7 +57,7 @@ public class ThoughtService<T>(
         return _mapper.Map<ThoughtResponse>(entity);
     }
 
-    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await _repository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException($"Entity with id {id} not found");
@@ -91,5 +91,60 @@ public class ThoughtService<T>(
 
         var results = await query.ToListAsync(cancellationToken);
         return _mapper.Map<IEnumerable<ThoughtResponse>>(results);
+    }
+
+    public async Task<StatsResponse> GetStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var thoughts = await _repository.GetAllAsync(cancellationToken);
+        var thoughtsList = thoughts.ToList();
+        var now = DateTime.UtcNow;
+        var weekAgo = now.AddDays(-7);
+        var monthAgo = now.AddDays(-30);
+
+        var stats = new StatsResponse
+        {
+            TotalThoughts = thoughtsList.Count,
+            TotalConnections = 0, // TODO: Implement when connections are available
+            ActiveTasks = thoughtsList.Count(t => t.Category?.ToLower() == "task"),
+            CompletedTasks = 0, // TODO: Implement when task status is available
+            WeeklyThoughts = thoughtsList.Count(t => t.CreatedAt >= weekAgo),
+            MonthlyThoughts = thoughtsList.Count(t => t.CreatedAt >= monthAgo),
+            ActiveDays = thoughtsList.GroupBy(t => t.CreatedAt.Date).Count(),
+            CategoriesCount = thoughtsList
+                .GroupBy(t => t.Category ?? "uncategorized")
+                .ToDictionary(g => g.Key, g => g.Count()),
+            TagsCount = thoughtsList
+                .SelectMany(t => t.Tags ?? new List<string>())
+                .GroupBy(tag => tag)
+                .ToDictionary(g => g.Key, g => g.Count()),
+            AverageImportance = thoughtsList.Any() ? thoughtsList.Average(t => t.Importance ?? 3) : 0
+        };
+
+        return stats;
+    }
+
+    public async Task<IEnumerable<ActivityResponse>> GetRecentActivityAsync(int limit = 10, CancellationToken cancellationToken = default)
+    {
+        var thoughts = await _repository.GetAllAsync(cancellationToken);
+        var recentThoughts = thoughts
+            .OrderByDescending(t => t.UpdatedAt)
+            .Take(limit)
+            .Select(t => new ActivityResponse
+            {
+                Type = t.UpdatedAt > t.CreatedAt.AddMinutes(1) ? "updated" : "created",
+                Description = t.UpdatedAt > t.CreatedAt.AddMinutes(1)
+                    ? $"Updated thought: {t.Title}"
+                    : $"Created thought: {t.Title}",
+                Timestamp = t.UpdatedAt != null ? t.UpdatedAt.Value : DateTime.UtcNow,
+                ThoughtId = t.Id.ToString(),
+                ThoughtTitle = t.Title,
+                Metadata = new Dictionary<string, object>
+                {
+                    ["category"] = t.Category ?? "uncategorized",
+                    ["importance"] = t.Importance ?? 3
+                }
+            });
+
+        return recentThoughts;
     }
 }

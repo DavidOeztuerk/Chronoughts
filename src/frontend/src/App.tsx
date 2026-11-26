@@ -1,35 +1,78 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useMemo } from 'react';
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { Outlet } from 'react-router-dom';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: isDarkMode ? 'dark' : 'light',
+          primary: {
+            main: '#667eea',
+          },
+          secondary: {
+            main: '#764ba2',
+          },
+          background: {
+            default: isDarkMode ? '#121212' : '#f5f5f5',
+            paper: isDarkMode ? '#1e1e1e' : '#ffffff',
+          },
+        },
+        typography: {
+          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+          h1: {
+            fontWeight: 700,
+          },
+          h2: {
+            fontWeight: 700,
+          },
+          h3: {
+            fontWeight: 600,
+          },
+          h4: {
+            fontWeight: 600,
+          },
+          h5: {
+            fontWeight: 500,
+          },
+        },
+        shape: {
+          borderRadius: 12,
+        },
+        components: {
+          MuiButton: {
+            styleOverrides: {
+              root: {
+                textTransform: 'none',
+                fontWeight: 500,
+              },
+            },
+          },
+          MuiPaper: {
+            styleOverrides: {
+              root: {
+                backgroundImage: 'none',
+              },
+            },
+          },
+        },
+      }),
+    [isDarkMode]
+  );
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Outlet context={{ toggleTheme, isDarkMode }} />
+    </ThemeProvider>
+  );
 }
 
-export default App
+export default App;

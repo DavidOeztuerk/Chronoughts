@@ -1,4 +1,5 @@
 using Chronoughts.Api.Common;
+using Chronoughts.Api.Models;
 
 namespace Chronoughts.Api.Data.Repositories;
 
@@ -8,4 +9,8 @@ public interface IThoughtRepository<T>
 {
     Task<IEnumerable<T>> GetByTagAsync(string tag, CancellationToken cancellationToken = default);
     Task<IEnumerable<T>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default);
+}
+
+public interface IThoughtRepository : IThoughtRepository<Thought>
+{
 }

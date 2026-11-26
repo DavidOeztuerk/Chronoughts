@@ -17,4 +17,6 @@ public interface IThoughtService<TResponse, TRequest>
 
 public interface IThoughtService : IThoughtService<ThoughtResponse, ThoughtRequest>
 {
+    Task<StatsResponse> GetStatsAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<ActivityResponse>> GetRecentActivityAsync(int limit = 10, CancellationToken cancellationToken = default);
 }

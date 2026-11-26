@@ -12,7 +12,7 @@ public class ThoughtRepository<T>(
     protected readonly ChronoughtsDbContext _context = context;
     protected readonly DbSet<T> _dbSet = context.Set<T>();
 
-    public async Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet.FindAsync([id], cancellationToken: cancellationToken);
     }

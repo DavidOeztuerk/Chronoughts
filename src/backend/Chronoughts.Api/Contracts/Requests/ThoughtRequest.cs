@@ -6,6 +6,9 @@ public record ThoughtRequest(
     string Title,
     string Content,
     string Category,
+    int? Importance,
+    string? Status,
+    string? Notes,
     List<string> Tags)
     : IRequest;
 
